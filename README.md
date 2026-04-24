@@ -5,8 +5,8 @@ REST API built with Spring Boot 3 and Java 21 to register and count identical se
 ---
 
 ### Prerequisites
-- **Java 21** installed (required to run or test locally).
-- **Docker** and Docker Compose.
+- **Java 21** (required to run or test locally without Docker).
+- **Docker** (required to run the full application).
 
 ---
 
