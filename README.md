@@ -15,7 +15,7 @@ The infrastructure and application are fully dockerized.
 
 ```bash
 # Start the full stack
-docker compose up
+docker compose up --build
 
 # Stop all services
 docker compose down
