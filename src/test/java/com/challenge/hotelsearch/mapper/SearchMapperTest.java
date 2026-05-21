@@ -1,6 +1,7 @@
 package com.challenge.hotelsearch.mapper;
 
 import com.challenge.hotelsearch.search.domain.model.Search;
+import com.challenge.hotelsearch.search.infrastructure.persistence.entity.SearchJpaEntity;
 import com.challenge.hotelsearch.search.infrastructure.rest.request.SearchCreatedRequest;
 import com.challenge.hotelsearch.search.infrastructure.rest.response.SearchResponse;
 import com.challenge.hotelsearch.search.infrastructure.mapper.SearchMapper;
@@ -24,25 +25,25 @@ class SearchMapperTest {
 
         assertAll(
             () -> assertNotNull(result),
-            () -> assertEquals("123", result.getHotelId()),
-            () -> assertEquals(LocalDate.of(2026, 4, 20), result.getCheckIn()),
-            () -> assertEquals(LocalDate.of(2026, 4, 27), result.getCheckOut()),
-            () -> assertEquals("10,70", result.getAges()),
-            () -> assertNull(result.getSearchId()),
-            () -> assertNull(result.getHash())
+            () -> assertEquals("123", result.hotelId()),
+            () -> assertEquals(LocalDate.of(2026, 4, 20), result.checkIn()),
+            () -> assertEquals(LocalDate.of(2026, 4, 27), result.checkOut()),
+            () -> assertEquals("10,70", result.ages()),
+            () -> assertNull(result.searchId()),
+            () -> assertNull(result.hash())
         );
     }
 
     @Test
     void shouldMapEntityToResponse() {
-        Search search = Search.builder()
-                .searchId("search-1")
-                .hotelId("123")
-                .checkIn(LocalDate.of(2026, 4, 20))
-                .checkOut(LocalDate.of(2026, 4, 27))
-                .ages("10,70")
-                .hash("hash-123")
-                .build();
+        Search search = new Search(
+                "search-1",
+                "hash-123",
+                "123",
+                LocalDate.of(2026, 4, 20),
+                LocalDate.of(2026, 4, 27),
+                "10,70"
+        );
 
         SearchResponse result = mapper.toSearchResponseDTO(search);
 
@@ -71,6 +72,51 @@ class SearchMapperTest {
             () -> assertEquals(List.of(), mapper.stringToList(null)),
             () -> assertEquals(List.of(), mapper.stringToList("")),
             () -> assertEquals(List.of(), mapper.stringToList("   "))
+        );
+    }
+
+    @Test
+    void shouldMapSearchToJpaEntity() {
+        Search search = new Search(
+                "s1",
+                "hash-abc",
+                "hotel-1",
+                LocalDate.of(2026, 4, 20),
+                LocalDate.of(2026, 4, 27),
+                "10,20"
+        );
+
+        SearchJpaEntity result = mapper.toJpaEntity(search);
+
+        assertAll(
+            () -> assertEquals("s1", result.getSearchId()),
+            () -> assertEquals("hash-abc", result.getHash()),
+            () -> assertEquals("hotel-1", result.getHotelId()),
+            () -> assertEquals(LocalDate.of(2026, 4, 20), result.getCheckIn()),
+            () -> assertEquals(LocalDate.of(2026, 4, 27), result.getCheckOut()),
+            () -> assertEquals("10,20", result.getAges())
+        );
+    }
+
+    @Test
+    void shouldMapJpaEntityToDomain() {
+        SearchJpaEntity entity = new SearchJpaEntity();
+        entity.setSearchId("s1");
+        entity.setHash("hash-abc");
+        entity.setHotelId("hotel-1");
+        entity.setCheckIn(LocalDate.of(2026, 4, 20));
+        entity.setCheckOut(LocalDate.of(2026, 4, 27));
+        entity.setAges("10,20");
+
+        Search result = mapper.toDomain(entity);
+
+        assertAll(
+            () -> assertEquals("s1", result.searchId()),
+            () -> assertEquals("hash-abc", result.hash()),
+            () -> assertEquals("hotel-1", result.hotelId()),
+            () -> assertEquals(LocalDate.of(2026, 4, 20), result.checkIn()),
+            () -> assertEquals(LocalDate.of(2026, 4, 27), result.checkOut()),
+            () -> assertEquals("10,20", result.ages())
         );
     }
 }

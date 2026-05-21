@@ -40,11 +40,22 @@ http://localhost:8081/swagger-ui.html
 
 ### Architecture & Tech
 - Hexagonal Architecture (Domain, Application, and Infrastructure layers).
+- Apache Kafka for asynchronous event-driven communication.
 - Java 21: Virtual Threads for efficient consumer processing.
 - SHA-256: Unique hash generation for duplicate identification.
 - Persistence: Oracle 23c.
-- Quality: Jacoco code coverage > 80%.
+- Quality: Jacoco code coverage 100%.
 
+---
+
+### Kafka Reliability
+
+The application implements resilient Kafka processing:
+
+- Failed messages are retried 2 times with a 2-second interval.
+- Messages that still fail are redirected to a Dead Letter Topic (.DLT).
+- Prevents consumer blocking and avoids message loss.
+- Implemented using Spring Kafka DefaultErrorHandler and DeadLetterPublishingRecoverer.
 ---
 
 ### Tests

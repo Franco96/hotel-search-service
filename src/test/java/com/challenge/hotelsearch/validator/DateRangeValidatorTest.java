@@ -28,31 +28,31 @@ class DateRangeValidatorTest {
 
         when(context.getDefaultConstraintMessageTemplate()).thenReturn("checkIn must be before checkOut");
         when(context.buildConstraintViolationWithTemplate(any())).thenReturn(violationBuilder);
-        when(violationBuilder.addPropertyNode("checkIn")).thenReturn(nodeBuilder);
+        when(violationBuilder.addPropertyNode(any(String.class))).thenReturn(nodeBuilder);
         when(nodeBuilder.addConstraintViolation()).thenReturn(context);
     }
 
     @Test
     void shouldReturnTrueWhenCheckInIsNull() {
-        SearchCreatedRequest dto = new SearchCreatedRequest("hotel", null, LocalDate.of(2026, 4, 20), List.of(1));
+        SearchCreatedRequest dto = new SearchCreatedRequest("hotel", null, LocalDate.of(2027, 4, 20), List.of(1));
         assertTrue(validator.isValid(dto, context));
     }
 
     @Test
     void shouldReturnTrueWhenCheckOutIsNull() {
-        SearchCreatedRequest dto = new SearchCreatedRequest("hotel", LocalDate.of(2026, 4, 20), null, List.of(1));
+        SearchCreatedRequest dto = new SearchCreatedRequest("hotel", LocalDate.of(2027, 4, 20), null, List.of(1));
         assertTrue(validator.isValid(dto, context));
     }
 
     @Test
     void shouldReturnTrueWhenCheckInIsBeforeCheckOut() {
-        SearchCreatedRequest dto = new SearchCreatedRequest("hotel",  LocalDate.of(2026, 4, 20),  LocalDate.of(2026, 4, 27), List.of(1));
+        SearchCreatedRequest dto = new SearchCreatedRequest("hotel",  LocalDate.of(2027, 4, 20),  LocalDate.of(2027, 4, 27), List.of(1));
         assertTrue(validator.isValid(dto, context));
     }
 
     @Test
     void shouldReturnFalseWhenCheckInIsAfterCheckOut() {
-        SearchCreatedRequest dto = new SearchCreatedRequest("hotel",  LocalDate.of(2026, 4, 26),  LocalDate.of(2026, 4, 20), List.of(1));
+        SearchCreatedRequest dto = new SearchCreatedRequest("hotel",  LocalDate.of(2027, 4, 26),  LocalDate.of(2027, 4, 20), List.of(1));
 
         assertFalse(validator.isValid(dto, context));
 
@@ -62,7 +62,19 @@ class DateRangeValidatorTest {
 
     @Test
     void shouldReturnFalseWhenCheckInEqualsCheckOut() {
-        SearchCreatedRequest dto = new SearchCreatedRequest("hotel", LocalDate.of(2026, 4, 20), LocalDate.of(2026, 4, 20), List.of(1));
+        SearchCreatedRequest dto = new SearchCreatedRequest("hotel", LocalDate.of(2027, 4, 20), LocalDate.of(2027, 4, 20), List.of(1));
+        assertFalse(validator.isValid(dto, context));
+    }
+
+    @Test
+    void shouldReturnFalseWhenCheckInIsBeforeToday() {
+        SearchCreatedRequest dto = new SearchCreatedRequest("hotel", LocalDate.of(2021, 4, 20), LocalDate.of(2027, 4, 20), List.of(1));
+        assertFalse(validator.isValid(dto, context));
+    }
+
+    @Test
+    void shouldReturnFalseWhenOutInIsBeforeToday() {
+        SearchCreatedRequest dto = new SearchCreatedRequest("hotel", LocalDate.of(2027, 4, 20), LocalDate.of(2021, 4, 20), List.of(1));
         assertFalse(validator.isValid(dto, context));
     }
 }

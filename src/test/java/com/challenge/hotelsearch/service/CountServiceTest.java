@@ -4,7 +4,7 @@ import com.challenge.hotelsearch.search.application.dto.CountResultDTO;
 import com.challenge.hotelsearch.search.application.exception.SearchNotFoundException;
 import com.challenge.hotelsearch.search.application.service.CountService;
 import com.challenge.hotelsearch.search.domain.model.Search;
-import com.challenge.hotelsearch.search.domain.repository.SearchRepository;
+import com.challenge.hotelsearch.search.application.port.out.SearchRepositoryPort;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,24 +21,24 @@ import static org.mockito.Mockito.when;
 class CountServiceTest {
 
     @Mock
-    private SearchRepository searchRepository;
+    private SearchRepositoryPort searchRepositoryPort;
 
     @InjectMocks
     private CountService countService;
 
     @Test
     void shouldReturnCountResponseWhenSearchExists() {
-        Search search = Search.builder()
-                .searchId("search-1")
-                .hash("hash-123")
-                .hotelId("123")
-                .checkIn(LocalDate.of(2026, 4, 20))
-                .checkOut(LocalDate.of(2026, 4, 27))
-                .ages("10,70")
-                .build();
+        Search search = new Search(
+                "search-1",
+                "hash-123",
+                "123",
+                LocalDate.of(2026, 4, 20),
+                LocalDate.of(2026, 4, 27),
+                "10,70"
+        );
 
-        when(searchRepository.findBySearchId("search-1")).thenReturn(Optional.of(search));
-        when(searchRepository.countByHash("hash-123")).thenReturn(5L);
+        when(searchRepositoryPort.findBySearchId("search-1")).thenReturn(Optional.of(search));
+        when(searchRepositoryPort.countByHash("hash-123")).thenReturn(5L);
 
         CountResultDTO result = countService.count("search-1");
 
@@ -51,7 +51,7 @@ class CountServiceTest {
 
     @Test
     void shouldThrowWhenSearchNotFound() {
-        when(searchRepository.findBySearchId("missing")).thenReturn(Optional.empty());
+        when(searchRepositoryPort.findBySearchId("missing")).thenReturn(Optional.empty());
 
         assertThrows(SearchNotFoundException.class, () -> countService.count("missing"));
     }

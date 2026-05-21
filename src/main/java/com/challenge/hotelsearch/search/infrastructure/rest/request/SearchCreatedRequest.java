@@ -19,12 +19,12 @@ public record SearchCreatedRequest(
         @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "must be alphanumeric")
         String hotelId,
 
-        @Schema(description = "Check-in date in format dd/MM/yyyy", example = "20/04/2026")
+        @Schema(description = "Check-in date in format dd/MM/yyyy", example = "15/10/2026")
         @NotNull(message = "checkIn is required")
         @JsonFormat(pattern = "dd/MM/uuuu", lenient = FALSE)
         LocalDate checkIn,
 
-        @Schema(description = "Check-out date in format dd/MM/yyyy", example = "27/04/2026")
+        @Schema(description = "Check-out date in format dd/MM/yyyy", example = "28/10/2026")
         @NotNull(message = "checkOut is required")
         @JsonFormat(pattern = "dd/MM/uuuu", lenient = FALSE)
         LocalDate checkOut,

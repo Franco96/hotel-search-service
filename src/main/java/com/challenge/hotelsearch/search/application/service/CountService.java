@@ -2,22 +2,25 @@ package com.challenge.hotelsearch.search.application.service;
 
 import com.challenge.hotelsearch.search.application.dto.CountResultDTO;
 import com.challenge.hotelsearch.search.application.exception.SearchNotFoundException;
+import com.challenge.hotelsearch.search.application.port.in.CountSearchUseCase;
 import com.challenge.hotelsearch.search.domain.model.Search;
-import com.challenge.hotelsearch.search.domain.repository.SearchRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+import com.challenge.hotelsearch.search.application.port.out.SearchRepositoryPort;
 
-@Service
-@RequiredArgsConstructor
-public class CountService {
 
-    private final SearchRepository searchRepository;
+public class CountService implements CountSearchUseCase {
 
+    private final SearchRepositoryPort searchRepositoryPort;
+
+    public CountService(SearchRepositoryPort searchRepositoryPort) {
+        this.searchRepositoryPort = searchRepositoryPort;
+    }
+
+    @Override
     public CountResultDTO count(String searchId) {
-        Search search = searchRepository.findBySearchId(searchId)
+        Search search = searchRepositoryPort.findBySearchId(searchId)
                 .orElseThrow(() -> new SearchNotFoundException("Search not found"));
 
-        long count = searchRepository.countByHash(search.getHash());
+        long count = searchRepositoryPort.countByHash(search.hash());
         return new CountResultDTO(searchId, search, count);
     }
 }

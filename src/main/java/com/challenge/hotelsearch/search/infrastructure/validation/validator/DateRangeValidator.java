@@ -5,6 +5,8 @@ import com.challenge.hotelsearch.search.infrastructure.validation.annotation.Val
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
+import java.time.LocalDate;
+
 public class DateRangeValidator implements ConstraintValidator<ValidDateRange, SearchCreatedRequest> {
 
     @Override
@@ -13,14 +15,23 @@ public class DateRangeValidator implements ConstraintValidator<ValidDateRange, S
             return true;
         }
 
-        if (!dto.checkIn().isBefore(dto.checkOut())) {
-            context.disableDefaultConstraintViolation();
-            context.buildConstraintViolationWithTemplate(context.getDefaultConstraintMessageTemplate())
-                    .addPropertyNode("checkIn")
-                    .addConstraintViolation();
-            return false;
-        }
-        return true;
+        LocalDate today = LocalDate.now();
 
+        if (dto.checkIn().isBefore(today))
+            return reject(context, "checkIn", "Past dates are not allowed");
+        if (dto.checkOut().isBefore(today))
+            return reject(context, "checkOut", "Past dates are not allowed");
+        if (!dto.checkIn().isBefore(dto.checkOut()))
+            return reject(context, "checkIn", context.getDefaultConstraintMessageTemplate());
+
+        return true;
+    }
+
+    private boolean reject(ConstraintValidatorContext context, String field, String message) {
+        context.disableDefaultConstraintViolation();
+        context.buildConstraintViolationWithTemplate(message)
+                .addPropertyNode(field)
+                .addConstraintViolation();
+        return false;
     }
 }

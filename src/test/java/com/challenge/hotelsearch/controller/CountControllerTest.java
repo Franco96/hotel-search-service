@@ -1,8 +1,10 @@
 package com.challenge.hotelsearch.controller;
 
 import com.challenge.hotelsearch.search.application.dto.CountResultDTO;
-import com.challenge.hotelsearch.search.application.service.CountService;
+import com.challenge.hotelsearch.search.application.exception.SearchNotFoundException;
+import com.challenge.hotelsearch.search.application.port.in.CountSearchUseCase;
 import com.challenge.hotelsearch.search.domain.model.Search;
+import com.challenge.hotelsearch.search.infrastructure.exception.RestExceptionHandler;
 import com.challenge.hotelsearch.search.infrastructure.mapper.SearchMapper;
 import com.challenge.hotelsearch.search.infrastructure.rest.controller.CountController;
 import com.challenge.hotelsearch.search.infrastructure.rest.response.SearchResponse;
@@ -20,26 +22,27 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class CountControllerTest {
 
-    private final CountService countService = mock(CountService.class);
+    private final CountSearchUseCase countSearchUseCase = mock(CountSearchUseCase.class);
     private final SearchMapper searchMapper = mock(SearchMapper.class);
     private final MockMvc mockMvc = MockMvcBuilders
-            .standaloneSetup(new CountController(countService, searchMapper))
+            .standaloneSetup(new CountController(countSearchUseCase, searchMapper))
+            .setControllerAdvice(new RestExceptionHandler())
             .build();
 
     @Test
     void shouldReturnCountResponse() throws Exception {
-        Search search = Search.builder()
-                .searchId("search-1")
-                .hotelId("1234aBc")
-                .checkIn(LocalDate.of(2026, 1, 29))
-                .checkOut(LocalDate.of(2026, 1, 31))
-                .ages("30,29,1,3")
-                .hash("somehash")
-                .build();
+        Search search = new Search(
+                "search-1",
+                "somehash",
+                "1234aBc",
+                LocalDate.of(2026, 1, 29),
+                LocalDate.of(2026, 1, 31),
+                "30,29,1,3"
+        );
 
         CountResultDTO countResult = new CountResultDTO("search-1", search, 4L);
 
-        when(countService.count("search-1")).thenReturn(countResult);
+        when(countSearchUseCase.count("search-1")).thenReturn(countResult);
 
         when(searchMapper.toSearchResponseDTO(any())).thenReturn(
                 new SearchResponse(
@@ -62,7 +65,17 @@ class CountControllerTest {
                 .andExpect(jsonPath("$.search.ages[2]").value(1))
                 .andExpect(jsonPath("$.search.ages[3]").value(3));
 
-        verify(countService).count("search-1");
+        verify(countSearchUseCase).count("search-1");
         verify(searchMapper).toSearchResponseDTO(search);
+    }
+
+    @Test
+    void shouldReturn404WhenSearchNotFound() throws Exception {
+        when(countSearchUseCase.count("missing")).thenThrow(new SearchNotFoundException("Search not found"));
+
+        mockMvc.perform(get("/count").param("searchId", "missing"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.title").value("Not found"))
+                .andExpect(jsonPath("$.detail").value("Search not found"));
     }
 }

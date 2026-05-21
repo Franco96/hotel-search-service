@@ -1,42 +1,44 @@
 package com.challenge.hotelsearch.search.application.service;
 
+import com.challenge.hotelsearch.search.application.port.in.SaveSearchUseCase;
 import com.challenge.hotelsearch.search.domain.model.Search;
-import com.challenge.hotelsearch.search.domain.repository.SearchRepository;
-import lombok.RequiredArgsConstructor;
+import com.challenge.hotelsearch.search.application.port.out.SearchRepositoryPort;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.springframework.stereotype.Service;
 
 import java.time.format.DateTimeFormatter;
 
-@Service
-@RequiredArgsConstructor
-public class SaveSearchService {
+public class SaveSearchService implements SaveSearchUseCase {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    private final SearchRepository searchRepository;
+    private final SearchRepositoryPort searchRepositoryPort;
 
+    public SaveSearchService(SearchRepositoryPort searchRepositoryPort) {
+        this.searchRepositoryPort = searchRepositoryPort;
+    }
+
+    @Override
     public void save(Search search) {
         String hash = generateHash(search);
 
-        Search withHash = Search.builder()
-                .searchId(search.getSearchId())
-                .hotelId(search.getHotelId())
-                .checkIn(search.getCheckIn())
-                .checkOut(search.getCheckOut())
-                .ages(search.getAges())
-                .hash(hash)
-                .build();
+        Search withHash = new Search(
+                search.searchId(),
+                hash,
+                search.hotelId(),
+                search.checkIn(),
+                search.checkOut(),
+                search.ages()
+        );
 
-        searchRepository.save(withHash);
+        searchRepositoryPort.save(withHash);
     }
 
     private String generateHash(Search search) {
         String input = String.join("|",
-                search.getHotelId(),
-                search.getCheckIn().format(FORMATTER),
-                search.getCheckOut().format(FORMATTER),
-                search.getAges()
+                search.hotelId(),
+                search.checkIn().format(FORMATTER),
+                search.checkOut().format(FORMATTER),
+                search.ages()
         );
         return DigestUtils.sha256Hex(input);
     }

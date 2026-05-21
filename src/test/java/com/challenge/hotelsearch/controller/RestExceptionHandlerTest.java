@@ -1,8 +1,8 @@
 package com.challenge.hotelsearch.controller;
 
+import com.challenge.hotelsearch.search.application.exception.SearchEventPublishException;
 import com.challenge.hotelsearch.search.application.exception.SearchNotFoundException;
-import com.challenge.hotelsearch.search.infrastructure.exception.handler.GlobalExceptionHandler;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.challenge.hotelsearch.search.infrastructure.exception.RestExceptionHandler;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Path;
@@ -14,20 +14,17 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
-import java.time.LocalDate;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 
-import static com.challenge.hotelsearch.search.infrastructure.exception.handler.GlobalExceptionHandler.INVALID_DATE_MESSAGE;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class GlobalExceptionHandlerTest {
+class RestExceptionHandlerTest {
 
-    private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    private final RestExceptionHandler handler = new RestExceptionHandler();
 
     @Test
     void shouldHandleBodyValidation() {
@@ -39,7 +36,9 @@ class GlobalExceptionHandlerTest {
 
         when(ex.getBindingResult()).thenReturn(bindingResult);
         when(bindingResult.getFieldErrors()).thenReturn(
-                Collections.singletonList(new FieldError("object", "hotelId", "must not be blank"))
+                List.of(new FieldError("searchCreatedRequest", "hotelId", "hotelId is required"),
+                        new FieldError("searchCreatedRequest", "hotelId", "must be alphanumeric")
+                )
         );
 
         ProblemDetail detail = handler.handleBodyValidation(ex, request);
@@ -61,56 +60,35 @@ class GlobalExceptionHandlerTest {
 
         ConstraintViolationException ex = mock(ConstraintViolationException.class);
 
-        ConstraintViolation<Object> violation = mock(ConstraintViolation.class);
+        ConstraintViolation<Object> violation1 = mock(ConstraintViolation.class);
+        ConstraintViolation<Object> violation2 = mock(ConstraintViolation.class);
 
         Set<ConstraintViolation<?>> violations = new HashSet<>();
-        violations.add(violation);
+        violations.add(violation1);
+        violations.add(violation2);
 
         Path path = mock(Path.class);
         when(path.toString()).thenReturn("count.searchId");
 
         when(ex.getConstraintViolations()).thenReturn(violations);
-        when(violation.getPropertyPath()).thenReturn(path);
-        when(violation.getMessage()).thenReturn("must not be blank");
+        when(violation1.getPropertyPath()).thenReturn(path);
+        when(violation1.getMessage()).thenReturn("Value must follow pattern ^[a-zA-Z0-9-]+$.");
+        when(violation2.getPropertyPath()).thenReturn(path);
+        when(violation2.getMessage()).thenReturn("Value must be no longer than 100 characters.");
 
         ProblemDetail detail = handler.handleParamsValidation(ex, request);
+
+        @SuppressWarnings("unchecked")
+        var errors = (java.util.Map<String, String>) detail.getProperties().get("errors");
 
         assertAll(
             () -> assertEquals(400, detail.getStatus()),
             () -> assertEquals("Validation error", detail.getTitle()),
             () -> assertEquals("Invalid request parameters", detail.getDetail()),
-            () -> assertEquals("/count", detail.getInstance().toString())
-        );
-    }
-
-    @Test
-    void shouldHandleHttpMessageNotReadableWithInvalidFormatException() {
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestURI("/search");
-
-        InvalidFormatException cause = InvalidFormatException.from(
-                null,
-                "Invalid date",
-                "31-12-2023",
-                LocalDate.class
-        );
-
-        cause.prependPath(Object.class, "checkIn");
-
-        HttpMessageNotReadableException ex = mock(HttpMessageNotReadableException.class);
-        when(ex.getCause()).thenReturn(cause);
-
-        ProblemDetail detail = handler.handleHttpMessageNotReadable(ex, request);
-
-        Map<String, String> errors =
-                (Map<String, String>) detail.getProperties().get("errors");
-
-        assertAll(
-                () -> assertEquals(400, detail.getStatus()),
-                () -> assertEquals("Validation error", detail.getTitle()),
-                () -> assertEquals("Invalid request body", detail.getDetail()),
-                () -> assertTrue(errors.containsKey("checkIn")),
-                () -> assertEquals(INVALID_DATE_MESSAGE, errors.get("checkIn"))
+            () -> assertEquals("/count", detail.getInstance().toString()),
+            () -> assertNotNull(errors),
+            () -> assertTrue(errors.get("count.searchId").contains("Value must follow pattern ^[a-zA-Z0-9-]+$.")),
+            () -> assertTrue(errors.get("count.searchId").contains("Value must be no longer than 100 characters."))
         );
     }
 
@@ -126,6 +104,22 @@ class GlobalExceptionHandlerTest {
             () -> assertEquals(400, detail.getStatus()),
             () -> assertEquals("Validation error", detail.getTitle()),
             () -> assertEquals("Invalid request body", detail.getDetail())
+        );
+    }
+
+    @Test
+    void shouldHandlePublishError() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRequestURI("/search");
+
+        ProblemDetail detail = handler.handlePublishError(
+                new SearchEventPublishException("Kafka unavailable"), request);
+
+        assertAll(
+            () -> assertEquals(503, detail.getStatus()),
+            () -> assertEquals("Event publishing failed", detail.getTitle()),
+            () -> assertEquals("Kafka unavailable", detail.getDetail()),
+            () -> assertEquals("/search", detail.getInstance().toString())
         );
     }
 

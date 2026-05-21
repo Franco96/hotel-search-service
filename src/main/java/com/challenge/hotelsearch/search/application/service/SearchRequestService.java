@@ -1,30 +1,33 @@
 package com.challenge.hotelsearch.search.application.service;
 
-import com.challenge.hotelsearch.search.application.port.SearchEventPublisher;
+import com.challenge.hotelsearch.search.application.port.out.SearchEventPublisherPort;
+import com.challenge.hotelsearch.search.application.port.in.CreateSearchUseCase;
 import com.challenge.hotelsearch.search.domain.model.Search;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
-@Service
-@RequiredArgsConstructor
-public class SearchRequestService {
+public class SearchRequestService implements CreateSearchUseCase {
 
-    private final SearchEventPublisher searchEventPublisher;
+    private final SearchEventPublisherPort searchEventPublisherPort;
 
+    public SearchRequestService(SearchEventPublisherPort searchEventPublisherPort) {
+        this.searchEventPublisherPort = searchEventPublisherPort;
+    }
+
+    @Override
     public String createSearch(Search search) {
         String searchId = UUID.randomUUID().toString();
 
-        Search identified = Search.builder()
-                .searchId(searchId)
-                .hotelId(search.getHotelId())
-                .checkIn(search.getCheckIn())
-                .checkOut(search.getCheckOut())
-                .ages(search.getAges())
-                .build();
+        Search identified = new Search(
+                searchId,
+                search.hash(),
+                search.hotelId(),
+                search.checkIn(),
+                search.checkOut(),
+                search.ages()
+        );
 
-        searchEventPublisher.publish(identified);
+        searchEventPublisherPort.publish(identified);
         return searchId;
     }
 }

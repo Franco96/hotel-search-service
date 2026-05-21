@@ -7,7 +7,6 @@ import com.challenge.hotelsearch.search.infrastructure.persistence.entity.Search
 import com.challenge.hotelsearch.search.infrastructure.persistence.repository.SearchRepositoryAdapter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -30,25 +29,25 @@ class SearchRepositoryAdapterTest {
     private SearchRepositoryAdapter adapter;
 
     private Search buildSearch() {
-        return Search.builder()
-                .searchId("s1")
-                .hotelId("h1")
-                .checkIn(LocalDate.of(2026, 4, 20))
-                .checkOut(LocalDate.of(2026, 4, 27))
-                .hash("hash-1")
-                .ages("10,20")
-                .build();
+        return new Search(
+                "s1",
+                "hash-1",
+                "h1",
+                LocalDate.of(2026, 4, 20),
+                LocalDate.of(2026, 4, 27),
+                "10,20"
+        );
     }
 
     private SearchJpaEntity buildEntity() {
-        return SearchJpaEntity.builder()
-                .searchId("s1")
-                .hotelId("h1")
-                .checkIn(LocalDate.of(2026, 4, 20))
-                .checkOut(LocalDate.of(2026, 4, 27))
-                .hash("hash-1")
-                .ages("10,20")
-                .build();
+        SearchJpaEntity entity = new SearchJpaEntity();
+        entity.setSearchId("s1");
+        entity.setHash("hash-1");
+        entity.setHotelId("h1");
+        entity.setCheckIn(LocalDate.of(2026, 4, 20));
+        entity.setCheckOut(LocalDate.of(2026, 4, 27));
+        entity.setAges("10,20");
+        return entity;
     }
 
     @Test
@@ -75,10 +74,10 @@ class SearchRepositoryAdapterTest {
         Search result = adapter.findBySearchId("s1").orElseThrow();
 
         assertAll(
-                () -> assertEquals("s1", result.getSearchId()),
-                () -> assertEquals("h1", result.getHotelId()),
-                () -> assertEquals(LocalDate.of(2026, 4, 20), result.getCheckIn()),
-                () -> assertEquals("hash-1", result.getHash())
+                () -> assertEquals("s1", result.searchId()),
+                () -> assertEquals("h1", result.hotelId()),
+                () -> assertEquals(LocalDate.of(2026, 4, 20), result.checkIn()),
+                () -> assertEquals("hash-1", result.hash())
         );
 
         verify(jpaRepository).findById("s1");

@@ -2,7 +2,8 @@ package com.challenge.hotelsearch.service;
 
 import com.challenge.hotelsearch.search.application.service.SaveSearchService;
 import com.challenge.hotelsearch.search.domain.model.Search;
-import com.challenge.hotelsearch.search.domain.repository.SearchRepository;
+import com.challenge.hotelsearch.search.application.port.out.SearchRepositoryPort;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -19,20 +20,21 @@ import static org.mockito.Mockito.verify;
 class SaveSearchServiceTest {
 
     @Mock
-    private SearchRepository repository;
+    private SearchRepositoryPort repository;
 
     @InjectMocks
     private SaveSearchService service;
 
     @Test
     void shouldGenerateHashAndSave() {
-        Search search = Search.builder()
-                .searchId("search-test-id")
-                .hotelId("123")
-                .checkIn(LocalDate.of(2026, 4, 20))
-                .checkOut(LocalDate.of(2026, 4, 27))
-                .ages("10,70")
-                .build();
+        Search search = new Search(
+                "search-test-id",
+                null,
+                "123",
+                LocalDate.of(2026, 4, 20),
+                LocalDate.of(2026, 4, 27),
+                "10,70"
+        );
 
         service.save(search);
 
@@ -40,13 +42,15 @@ class SaveSearchServiceTest {
         verify(repository).save(captor.capture());
         Search saved = captor.getValue();
 
+        String expectedHash = DigestUtils.sha256Hex("123|20/04/2026|27/04/2026|10,70");
+
         assertAll(
-            () -> assertNotNull(saved.getHash()),
-            () -> assertEquals(64, saved.getHash().length()),
-            () -> assertEquals("search-test-id", saved.getSearchId()),
-            () -> assertEquals("123", saved.getHotelId()),
-            () -> assertEquals(LocalDate.of(2026, 4, 20), saved.getCheckIn()),
-            () -> assertEquals(LocalDate.of(2026, 4, 27), saved.getCheckOut())
+            () -> assertEquals(expectedHash, saved.hash()),
+            () -> assertEquals(64, saved.hash().length()),
+            () -> assertEquals("search-test-id", saved.searchId()),
+            () -> assertEquals("123", saved.hotelId()),
+            () -> assertEquals(LocalDate.of(2026, 4, 20), saved.checkIn()),
+            () -> assertEquals(LocalDate.of(2026, 4, 27), saved.checkOut())
         );
     }
 }

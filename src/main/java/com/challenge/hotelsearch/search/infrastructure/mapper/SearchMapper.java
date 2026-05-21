@@ -51,11 +51,6 @@ public interface SearchMapper {
                 .toList();
     }
 
-    @Named("parseDate")
-    default LocalDate parseDate(String date) {
-        return LocalDate.parse(date, DATE_FORMATTER);
-    }
-
     @Named("formatDate")
     default String formatDate(LocalDate date) {
         return date.format(DATE_FORMATTER);

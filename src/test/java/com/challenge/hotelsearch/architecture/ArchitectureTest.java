@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
-public class ArchitectureTest {
+class ArchitectureTest {
     private final JavaClasses importedClasses = new ClassFileImporter()
             .importPackages("com.challenge.hotelsearch");
 
@@ -14,8 +14,26 @@ public class ArchitectureTest {
     void domainShouldNotDependOnOtherLayers() {
         noClasses()
                 .that().resideInAPackage("..domain..")
-                .should().dependOnClassesThat()
-                .resideInAnyPackage("..application..", "..infrastructure..")
+                .should()
+                .dependOnClassesThat()
+                .resideInAnyPackage(
+                        "..application..",
+                        "..infrastructure.."
+                )
+                .check(importedClasses);
+    }
+
+    @Test
+    void domainShouldBeFrameworkIndependent() {
+        noClasses()
+                .that().resideInAPackage("..domain..")
+                .should()
+                .dependOnClassesThat()
+                .resideInAnyPackage(
+                        "org.springframework..",
+                        "jakarta.persistence..",
+                        "org.hibernate.."
+                )
                 .check(importedClasses);
     }
 
@@ -23,8 +41,25 @@ public class ArchitectureTest {
     void applicationShouldNotDependOnInfrastructure() {
         noClasses()
                 .that().resideInAPackage("..application..")
-                .should().dependOnClassesThat()
-                .resideInAnyPackage("..infrastructure..")
+                .should()
+                .dependOnClassesThat()
+                .resideInAnyPackage(
+                        "..infrastructure.."
+                )
+                .check(importedClasses);
+    }
+
+    @Test
+    void applicationShouldBeFrameworkIndependent() {
+        noClasses()
+                .that().resideInAPackage("..application..")
+                .should()
+                .dependOnClassesThat()
+                .resideInAnyPackage(
+                        "org.springframework..",
+                        "jakarta.persistence..",
+                        "org.hibernate.."
+                )
                 .check(importedClasses);
     }
 }

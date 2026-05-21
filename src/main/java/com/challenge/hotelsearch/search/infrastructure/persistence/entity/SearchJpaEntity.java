@@ -1,7 +1,6 @@
 package com.challenge.hotelsearch.search.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
 
 import java.time.LocalDate;
 
@@ -10,10 +9,6 @@ import java.time.LocalDate;
 @Table(name = "search", indexes = {
         @Index(name = "idx_hash", columnList = "hash")
 })
-@Getter
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
 public class SearchJpaEntity {
 
     @Id
@@ -33,4 +28,22 @@ public class SearchJpaEntity {
 
     @Column(nullable = false)
     private String ages;
+
+    public String getSearchId() { return searchId; }
+    public void setSearchId(String searchId) { this.searchId = searchId; }
+
+    public String getHash() { return hash; }
+    public void setHash(String hash) { this.hash = hash; }
+
+    public String getHotelId() { return hotelId; }
+    public void setHotelId(String hotelId) { this.hotelId = hotelId; }
+
+    public LocalDate getCheckIn() { return checkIn; }
+    public void setCheckIn(LocalDate checkIn) { this.checkIn = checkIn; }
+
+    public LocalDate getCheckOut() { return checkOut; }
+    public void setCheckOut(LocalDate checkOut) { this.checkOut = checkOut; }
+
+    public String getAges() { return ages; }
+    public void setAges(String ages) { this.ages = ages; }
 }
